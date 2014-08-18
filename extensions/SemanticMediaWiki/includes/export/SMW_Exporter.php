@@ -63,11 +63,16 @@ class SMWExporter {
 			$smwgNamespace = "http://" . substr( $smwgNamespace, 1 ) . $resolver->getLocalURL() . '/';
 		}
 
+		// vincent : encoding make it unreadelbe
+		$smwgNamespace = rawurldecode(self::decodeURI($smwgNamespace));
+
 		// The article name must be the last part of wiki URLs for proper OWL/RDF export:
 		self::$m_ent_wikiurl  = $wgServer . str_replace( '$1', '', $wgArticlePath );
 		self::$m_ent_wiki     = $smwgNamespace;
-		self::$m_ent_property = self::$m_ent_wiki . self::encodeURI( urlencode( str_replace( ' ', '_', $wgContLang->getNsText( SMW_NS_PROPERTY ) . ':' ) ) );
+		// self::$m_ent_property = self::$m_ent_wiki . self::encodeURI( urlencode( str_replace( ' ', '_', $wgContLang->getNsText( SMW_NS_PROPERTY ) . ':' ) ) );
+		self::$m_ent_property = self::$m_ent_wiki . str_replace( ' ', '_', $wgContLang->getNsText( SMW_NS_PROPERTY ) . ':' );
 		$title = SpecialPage::getTitleFor( 'ExportRDF' );
+		// self::$m_exporturl    = self::$m_ent_wikiurl . $title->getPrefixedURL();
 		self::$m_exporturl    = self::$m_ent_wikiurl . $title->getPrefixedURL();
 	}
 
@@ -77,7 +82,8 @@ class SMWExporter {
 	 * @return string
 	 */
 	public function getEncodedPropertyNamespace() {
-		return $this->encodeURI( urlencode( str_replace( ' ', '_', $GLOBALS['wgContLang']->getNsText( SMW_NS_PROPERTY ) . ':' ) ) );
+		// return $this->encodeURI( urlencode( str_replace( ' ', '_', $GLOBALS['wgContLang']->getNsText( SMW_NS_PROPERTY ) . ':' ) ) );
+		return str_replace( ' ', '_', $GLOBALS['wgContLang']->getNsText( SMW_NS_PROPERTY ) . ':' );
 	}
 
 	/**
@@ -98,6 +104,7 @@ class SMWExporter {
 		foreach ( $semdata->getProperties() as $property ) {
 			self::addPropertyValues( $property, $semdata->getPropertyValues( $property ), $result, $subject );
 		}
+
 		return $result;
 	}
 
@@ -119,7 +126,6 @@ class SMWExporter {
 		global $wgContLang;
 		$wikiPageExpElement = self::getDataItemExpElement( $diWikiPage );
 		$result = new SMWExpData( $wikiPageExpElement );
-
 		if ( $diWikiPage->getSubobjectName() !== '' ) {
 			$result->addPropertyObjectValue( self::getSpecialNsResource( 'rdf', 'type' ), self::getSpecialNsResource( 'swivt', 'Subject' ) );
 			$masterPage = new SMWDIWikiPage( $diWikiPage->getDBkey(), $diWikiPage->getNamespace(), $diWikiPage->getInterwiki() );
@@ -137,7 +143,8 @@ class SMWExporter {
 			} else {
 				$prefixedSubjectTitle = $pageTitle;
 			}
-			$prefixedSubjectUrl = wfUrlencode( str_replace( ' ', '_', $prefixedSubjectTitle ) );
+			// $prefixedSubjectUrl = wfUrlencode( str_replace( ' ', '_', $prefixedSubjectTitle ) );
+			$prefixedSubjectUrl = str_replace( ' ', '_', $prefixedSubjectTitle );
 
 			switch ( $diWikiPage->getNamespace() ) {
 				case NS_CATEGORY: case SMW_NS_CONCEPT:
@@ -327,14 +334,17 @@ class SMWExporter {
 			$importValue = DataValueFactory::getInstance()->newDataItemValue( current( $importDis ), $importProperty );
 			$namespace = $importValue->getNS();
 			$namespaceId = $importValue->getNSID();
-			$localName = $importValue->getLocalName();
+			$localName = $importValue->getLocalName();			
 		} else {
 			$localName = '';
 
 			if ( $diWikiPage->getNamespace() == SMW_NS_PROPERTY ) {
 				$namespace = self::getNamespaceUri( 'property' );
 				$namespaceId = 'property';
-				$localName = self::encodeURI( rawurlencode( $diWikiPage->getDBkey() ) );
+
+				// modified by vincent : do not encode property names
+				// $localName = self::encodeURI( rawurlencode( $diWikiPage->getDBkey() ) );
+				$localName = $diWikiPage->getDBkey();
 			}
 
 			if ( ( $localName === '' ) ||
@@ -580,13 +590,19 @@ class SMWExporter {
 	 * empty
 	 */
 	static public function getOntologyExpData( $ontologyuri ) {
-		$data = new SMWExpData( new SMWExpResource( $ontologyuri ) );
+		$data = new SMWExpData( new SMWExpResource( $ontologyuri ) );		
 		$ed = self::getSpecialNsResource( 'owl', 'Ontology' );
+
 		$data->addPropertyObjectValue( self::getSpecialNsResource( 'rdf', 'type' ), $ed );
 		$ed = new SMWExpLiteral( date( DATE_W3C ), 'http://www.w3.org/2001/XMLSchema#dateTime' );
-		$data->addPropertyObjectValue( self::getSpecialNsResource( 'swivt', 'creationDate' ), $ed );
+
+		$data->addPropertyObjectValue( self::getSpecialNsResource( 'swivt', 'creationDate' ), $ed );	
 		$ed = new SMWExpResource( 'http://semantic-mediawiki.org/swivt/1.0' );
+
 		$data->addPropertyObjectValue( self::getSpecialNsResource( 'owl', 'imports' ), $ed );
+		
+		// var_dump($data);
+		
 		return $data;
 	}
 
@@ -731,7 +747,9 @@ class SMWExporter {
 			$localName = $diWikiPage->getDBkey();
 		}
 
-		return self::encodeURI( wfUrlencode( $localName ) );
+		// vincent : do not encode url
+		return $localName;
+		// return self::encodeURI( wfUrlencode( $localName ) );
 	}
 
 }

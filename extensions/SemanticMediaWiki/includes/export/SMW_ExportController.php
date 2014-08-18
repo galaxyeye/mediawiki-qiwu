@@ -121,6 +121,7 @@ class SMWExportController {
 	protected function serializePage( SMWDIWikiPage $diWikiPage, $recursiondepth = 1 ) {
 		if ( $this->isPageDone( $diWikiPage, $recursiondepth ) ) return; // do not export twice
 		$this->markPageAsDone( $diWikiPage, $recursiondepth );
+
 		$semData = $this->getSemanticData( $diWikiPage, ( $recursiondepth == 0 ) );
 		$expData = SMWExporter::makeExportData( $semData );
 		$this->serializer->serializeExpData( $expData, $recursiondepth );
@@ -354,6 +355,7 @@ class SMWExportController {
 		// transform pages into queued short titles
 		foreach ( $pages as $page ) {
 			$title = Title::newFromText( $page );
+
 			if ( null === $title ) continue; // invalid title name given
 			if ( $revisiondate !== '' ) { // filter page list by revision date
 				$rev = Revision::getTimeStampFromID( $title, $title->getLatestRevID() );
@@ -367,7 +369,8 @@ class SMWExportController {
 		$this->serializer->startSerialization();
 
 		if ( count( $pages ) == 1 ) { // ensure that ontologies that are retrieved as linked data are not confused with their subject!
-			$ontologyuri = SMWExporter::expandURI( '&export;' ) . '/' . urlencode( end( $pages ) );
+			// $ontologyuri = SMWExporter::expandURI( '&export;' ) . '/' . urlencode( end( $pages ) );
+			$ontologyuri = SMWExporter::expandURI( '&export;' ) . '/' . end( $pages );
 		} else { // use empty URI, i.e. "location" as URI otherwise
 			$ontologyuri = '';
 		}
@@ -398,7 +401,6 @@ class SMWExportController {
 	 * @param integer $delayeach number of pages to process between two sleeps
 	 */
 	public function printAllToFile( $outfile, $ns_restriction = false, $delay, $delayeach ) {
-
 		if ( !$this->prepareSerialization( $outfile ) ) {
 			return;
 		}
