@@ -135,7 +135,7 @@
 	"smw_exportrdf_backlinks": "同时导出与导出页面相关的所有页面。\n生成可浏览的RDF。",
 	"smw_exportrdf_lastdate": "不要导出自给定时间后无更改的页面。",
 	"smw_exportrdf_submit": "导出",
-	"uriresolver": "URI解析器",
+	"uriresolver": "uriresolver",
 	"properties": "属性",
 	"smw_properties_docu": "本维基使用以下属性。",
 	"smw_property_template": "$2类型的$1（$3次使用）",
